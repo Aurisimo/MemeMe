@@ -53,23 +53,9 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
         super.viewDidLoad()
 
         title = "Create Meme"
-        
-        topTextField.delegate = textFieldDelegate
-        bottomTextField.delegate = textFieldDelegate
 
-        let paragraph = NSMutableParagraphStyle()
-        paragraph.alignment = .center
-        
-        let memeAttributes: [NSAttributedString.Key : Any] = [
-            NSAttributedString.Key.strokeColor: UIColor.black,
-            NSAttributedString.Key.foregroundColor: UIColor.white,
-            NSAttributedString.Key.strokeWidth: -2,
-            NSAttributedString.Key.font: UIFont(name: "HelveticaNeue-CondensedBlack", size: 40)!,
-            NSAttributedString.Key.paragraphStyle: paragraph
-        ]
-        
-        topTextField.defaultTextAttributes = memeAttributes
-        bottomTextField.defaultTextAttributes = memeAttributes
+        configureTextField(topTextField)
+        configureTextField(bottomTextField)
         
         setDefaultValues()
     }
@@ -96,12 +82,17 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
         let vc = UIActivityViewController(activityItems: [memedImage], applicationActivities: nil)
         vc.popoverPresentationController?.barButtonItem = shareButton
         
+        vc.completionWithItemsHandler = { [unowned self] (type, completed, items, error) in
+            if completed { self.save() }
+        }
+        
         present(vc, animated: true)
     }
     
     @objc func keyboardWillShow(notification: Notification) {
         if bottomTextField.isFirstResponder { view.frame.origin.y -= getKeyboardHeight(notification) }
         
+        hideShareButton()
         hideCancelButton()
     }
     
@@ -159,6 +150,23 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
     }
 
     //MARK: Helper Methods
+    
+    func configureTextField(_ textField: UITextField) {
+        textField.delegate = textFieldDelegate
+
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.alignment = .center
+
+        let memeAttributes: [NSAttributedString.Key : Any] = [
+          .strokeColor: UIColor.black,
+          .foregroundColor: UIColor.white,
+          .strokeWidth: -2,
+          .font: UIFont(name: "HelveticaNeue-CondensedBlack", size: 40)!,
+          .paragraphStyle: paragraph
+        ]
+
+        textField.defaultTextAttributes = memeAttributes
+    }
     
     func showShareButton() {
         navigationItem.leftBarButtonItem = shareButton
@@ -229,7 +237,6 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
         navigationController?.navigationBar.isHidden = true
         navigationController?.isToolbarHidden = true
         
-        // Render view to an image
         UIGraphicsBeginImageContext(self.view.frame.size)
         view.drawHierarchy(in: self.view.frame, afterScreenUpdates: true)
         let memedImage:UIImage = UIGraphicsGetImageFromCurrentImageContext()!
