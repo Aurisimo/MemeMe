@@ -9,15 +9,12 @@
 import UIKit
 import AVFoundation
 
-class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+class EditMemeViewController: UIViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
 
     @IBOutlet var imageView: UIImageView!
     @IBOutlet var topTextField: UITextField!
     @IBOutlet var bottomTextField: UITextField!
-    
-    static let topDefaultText = "TOP"
-    static let bottomDefaultText = "BOTTOM"
-    
+        
     var shareButton: UIBarButtonItem!
     var cancelButton: UIBarButtonItem!
     var cameraButton: UIBarButtonItem!
@@ -90,7 +87,10 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
     }
     
     @objc func keyboardWillShow(notification: Notification) {
-        if bottomTextField.isFirstResponder { view.frame.origin.y -= getKeyboardHeight(notification) }
+        if bottomTextField.isFirstResponder {
+            view.frame.origin.y = -(getKeyboardHeight(notification) - (navigationController?.navigationBar.bounds.height ?? 0))
+            
+        }
         
         hideShareButton()
         hideCancelButton()
@@ -100,7 +100,7 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
         if bottomTextField.isFirstResponder {
             view.frame.origin.y = 0
             
-            if bottomTextField.text != ViewController.bottomDefaultText {
+            if bottomTextField.text != Constants.bottomDefaultText {
                 showShareButton()
                 showCancelButton()
             }
@@ -108,7 +108,7 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
             return
         }
         
-        if topTextField.text != ViewController.topDefaultText {
+        if topTextField.text != Constants.topDefaultText {
             showShareButton()
             showCancelButton()
         }
@@ -161,7 +161,7 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
           .strokeColor: UIColor.black,
           .foregroundColor: UIColor.white,
           .strokeWidth: -2,
-          .font: UIFont(name: "HelveticaNeue-CondensedBlack", size: 40)!,
+          .font: UIFont(name: "impact", size: 40)!,
           .paragraphStyle: paragraph
         ]
 
@@ -186,8 +186,8 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
     
     func setDefaultValues() {
         imageView.image = nil
-        topTextField.text = ViewController.topDefaultText
-        bottomTextField.text = ViewController.bottomDefaultText
+        topTextField.text = Constants.topDefaultText
+        bottomTextField.text = Constants.bottomDefaultText
         hideShareButton()
         hideCancelButton()
     }

@@ -11,6 +11,9 @@ import UIKit
 
 class TextFieldDelegate: NSObject, UITextFieldDelegate {
     func textFieldDidBeginEditing(_ textField: UITextField) {
+        guard textField.tag == Constants.topTextFieldTag && textField.text == Constants.topDefaultText
+            || textField.tag == Constants.bottomTextFieldTag && textField.text == Constants.bottomDefaultText else { return }
+        
         textField.text = ""
     }
     
