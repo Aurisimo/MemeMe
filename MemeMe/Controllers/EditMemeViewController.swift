@@ -11,44 +11,48 @@ import AVFoundation
 
 class EditMemeViewController: UIViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
 
+    static let identifier = "EditMemeViewController"
+    
     @IBOutlet var imageView: UIImageView!
     @IBOutlet var topTextField: UITextField!
     @IBOutlet var bottomTextField: UITextField!
         
     var shareButton: UIBarButtonItem!
-    var cancelButton: UIBarButtonItem!
     var cameraButton: UIBarButtonItem!
     var memedImage: UIImage!
-    var meme: Meme?
     
     let textFieldDelegate = TextFieldDelegate()
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        navigationController?.isToolbarHidden = false
+
+        subscribeToKeyboardWillShow()
+        subscribeToKeyboardWillHide()
         
         shareButton = UIBarButtonItem(barButtonSystemItem: .action, target: self, action: #selector(share))
-        cancelButton = UIBarButtonItem(barButtonSystemItem: .cancel, target: self, action: #selector(cancel))
-
+        shareButton.isEnabled = false
+        navigationItem.leftBarButtonItem = shareButton
+        let cancelButton = UIBarButtonItem(barButtonSystemItem: .cancel, target: self, action: #selector(cancel))
+        navigationItem.rightBarButtonItem = cancelButton
+        
         let space = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
-        navigationController?.isToolbarHidden = false
         cameraButton = UIBarButtonItem(barButtonSystemItem: .camera, target: self, action: #selector(pickImageFromCamera))
         cameraButton.isEnabled = UIImagePickerController.isSourceTypeAvailable(.camera)
         let albumButton = UIBarButtonItem(title: "Album", style: .plain, target: self, action: #selector(pickImageFromAlbum))
         
         toolbarItems = [space, cameraButton, albumButton, space]
-        
-        subscribeToKeyboardWillShow()
-        subscribeToKeyboardWillHide()
     }
     
     override func viewWillDisappear(_ animated: Bool) {
         unsubscribeFromKeyboardWillShow()
         unsubscribeFromKeyboardWillHide()
+        navigationController?.isToolbarHidden = true
     }
     
     override func viewDidLoad() {
         super.viewDidLoad()
-
+        
         title = "Create Meme"
 
         configureTextField(topTextField)
@@ -60,8 +64,7 @@ class EditMemeViewController: UIViewController, UIImagePickerControllerDelegate,
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
         if let image = info[.editedImage] as? UIImage {
             imageView.image = image
-            showShareButton()
-            showCancelButton()
+            shareButton.isEnabled = true
         }
         
         picker.dismiss(animated: true, completion: nil)
@@ -75,7 +78,6 @@ class EditMemeViewController: UIViewController, UIImagePickerControllerDelegate,
 
     @objc func share() {
         memedImage = generateMemedImage()
-        save()
         let vc = UIActivityViewController(activityItems: [memedImage], applicationActivities: nil)
         vc.popoverPresentationController?.barButtonItem = shareButton
         
@@ -89,33 +91,23 @@ class EditMemeViewController: UIViewController, UIImagePickerControllerDelegate,
     @objc func keyboardWillShow(notification: Notification) {
         if bottomTextField.isFirstResponder {
             view.frame.origin.y = -(getKeyboardHeight(notification) - (navigationController?.navigationBar.bounds.height ?? 0))
-            
         }
-        
-        hideShareButton()
-        hideCancelButton()
+            
+        shareButton.isEnabled = false
     }
     
     @objc func keyboardWillHide(notification: Notification) {
         if bottomTextField.isFirstResponder {
             view.frame.origin.y = 0
-            
-            if bottomTextField.text != Constants.bottomDefaultText {
-                showShareButton()
-                showCancelButton()
-            }
-            
-            return
         }
-        
-        if topTextField.text != Constants.topDefaultText {
-            showShareButton()
-            showCancelButton()
+
+        if imageView.image != nil {
+            shareButton.isEnabled = true
         }
     }
     
     @objc func cancel() {
-        setDefaultValues()
+        navigationController?.popViewController(animated: true)
     }
     
     @objc func pickImageFromAlbum(_ sender: UIBarButtonItem) {
@@ -167,29 +159,11 @@ class EditMemeViewController: UIViewController, UIImagePickerControllerDelegate,
 
         textField.defaultTextAttributes = memeAttributes
     }
-    
-    func showShareButton() {
-        navigationItem.leftBarButtonItem = shareButton
-    }
 
-    func showCancelButton() {
-        navigationItem.rightBarButtonItem = cancelButton
-    }
-    
-    func hideShareButton() {
-        navigationItem.leftBarButtonItem = nil
-    }
-    
-    func hideCancelButton() {
-        navigationItem.rightBarButtonItem = nil
-    }
-    
     func setDefaultValues() {
         imageView.image = nil
         topTextField.text = Constants.topDefaultText
         bottomTextField.text = Constants.bottomDefaultText
-        hideShareButton()
-        hideCancelButton()
     }
 
     func subscribeToKeyboardWillShow() {
@@ -230,7 +204,9 @@ class EditMemeViewController: UIViewController, UIImagePickerControllerDelegate,
     }
     
     func save() {
-        meme = Meme(topText: topTextField.text!, bottomText: bottomTextField.text!, originalImage: imageView.image!, memedImage: memedImage)
+        let meme = Meme(topText: topTextField.text!, bottomText: bottomTextField.text!, originalImage: imageView.image!, memedImage: memedImage)
+        let appDelegate = UIApplication.shared.delegate as! AppDelegate
+        appDelegate.memes.append(meme)
     }
     
     func generateMemedImage() -> UIImage {
