@@ -7,6 +7,7 @@
 //
 
 import Foundation
+
 struct Constants {
     static let topDefaultText = "TOP"
     static let bottomDefaultText = "BOTTOM"
