@@ -9,7 +9,8 @@
 import UIKit
 import AVFoundation
 
-class EditMemeViewController: UIViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+class EditMemeViewController: UIViewController, UIImagePickerControllerDelegate,
+UINavigationControllerDelegate {
 
     static let identifier = "EditMemeViewController"
     
@@ -30,16 +31,38 @@ class EditMemeViewController: UIViewController, UIImagePickerControllerDelegate,
         subscribeToKeyboardWillShow()
         subscribeToKeyboardWillHide()
         
-        shareButton = UIBarButtonItem(barButtonSystemItem: .action, target: self, action: #selector(share))
+        shareButton = UIBarButtonItem(
+            barButtonSystemItem: .action,
+            target: self,
+            action: #selector(share))
+        
         shareButton.isEnabled = false
         navigationItem.leftBarButtonItem = shareButton
-        let cancelButton = UIBarButtonItem(barButtonSystemItem: .cancel, target: self, action: #selector(cancel))
+        
+        let cancelButton = UIBarButtonItem(
+            barButtonSystemItem: .cancel,
+            target: self,
+            action: #selector(cancel))
+        
         navigationItem.rightBarButtonItem = cancelButton
         
-        let space = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
-        cameraButton = UIBarButtonItem(barButtonSystemItem: .camera, target: self, action: #selector(pickImageFromCamera))
+        let space = UIBarButtonItem(
+            barButtonSystemItem: .flexibleSpace,
+            target: nil,
+            action: nil)
+        
+        cameraButton = UIBarButtonItem(
+            barButtonSystemItem: .camera,
+            target: self,
+            action: #selector(pickImageFromCamera))
+        
         cameraButton.isEnabled = UIImagePickerController.isSourceTypeAvailable(.camera)
-        let albumButton = UIBarButtonItem(title: "Album", style: .plain, target: self, action: #selector(pickImageFromAlbum))
+        
+        let albumButton = UIBarButtonItem(
+            title: "Album",
+            style: .plain,
+            target: self,
+            action: #selector(pickImageFromAlbum))
         
         toolbarItems = [space, cameraButton, albumButton, space]
     }
@@ -61,7 +84,11 @@ class EditMemeViewController: UIViewController, UIImagePickerControllerDelegate,
         setDefaultValues()
     }
 
-    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+    func imagePickerController(
+        _ picker: UIImagePickerController,
+        didFinishPickingMediaWithInfo
+        info: [UIImagePickerController.InfoKey : Any])
+    {
         if let image = info[.editedImage] as? UIImage {
             imageView.image = image
             shareButton.isEnabled = true
@@ -74,7 +101,7 @@ class EditMemeViewController: UIViewController, UIImagePickerControllerDelegate,
         picker.dismiss(animated: true, completion: nil)
     }
     
-    //MARK: Action Methods
+    //MARK: Action methods
 
     @objc func share() {
         memedImage = generateMemedImage()
@@ -83,6 +110,7 @@ class EditMemeViewController: UIViewController, UIImagePickerControllerDelegate,
         
         vc.completionWithItemsHandler = { [unowned self] (type, completed, items, error) in
             if completed { self.save() }
+            self.cancel()
         }
         
         present(vc, animated: true)
@@ -90,7 +118,8 @@ class EditMemeViewController: UIViewController, UIImagePickerControllerDelegate,
     
     @objc func keyboardWillShow(notification: Notification) {
         if bottomTextField.isFirstResponder {
-            view.frame.origin.y = -(getKeyboardHeight(notification) - (navigationController?.navigationBar.bounds.height ?? 0))
+            view.frame.origin.y = -(getKeyboardHeight(notification)
+                - (navigationController?.navigationBar.bounds.height ?? 0))
         }
             
         shareButton.isEnabled = false
@@ -111,38 +140,44 @@ class EditMemeViewController: UIViewController, UIImagePickerControllerDelegate,
     }
     
     @objc func pickImageFromAlbum(_ sender: UIBarButtonItem) {
-        let picker = UIImagePickerController()
-        picker.delegate = self
-        picker.sourceType = .photoLibrary
-        picker.allowsEditing = true
-        
-        present(picker, animated: true)
+        pickImageFor(.photoLibrary)
     }
 
     @objc func pickImageFromCamera(_ sender: UIBarButtonItem) {
         switch AVCaptureDevice.authorizationStatus(for: AVMediaType.video) {
         case .authorized:
-            showImagePickerForCamera()
+            pickImageFor(.camera)
         case .notDetermined:
-            AVCaptureDevice.requestAccess(for: .video) { [unowned self] granted in
+            AVCaptureDevice.requestAccess(for: .video) {
+                [unowned self] granted in
                 if granted {
                     DispatchQueue.main.async {
-                        self.showImagePickerForCamera()
-                    }
+                        self.pickImageFor(.camera)                    }
                 }
             }
         case .denied:
-            showAlert(title: Alerts.authorizationRestrictionError, message: Alerts.noCameraAccessGrantedMessage)
+            showAlert(title: Alerts.authorizationRestrictionError,
+                      message: Alerts.noCameraAccessGrantedMessage)
         case .restricted:
-            showAlert(title: Alerts.authorizationRestrictionError, message: Alerts.restrictionToGrantCameraAccessMessage)
+            showAlert(title: Alerts.authorizationRestrictionError,
+                      message: Alerts.restrictionToGrantCameraAccessMessage)
         return
         default:
             break
         }
     }
 
-    //MARK: Helper Methods
+    //MARK: Helper methods
     
+    func pickImageFor(_ sourceType: UIImagePickerController.SourceType) {
+        let picker = UIImagePickerController()
+        picker.delegate = self
+        picker.sourceType = sourceType
+        picker.allowsEditing = true
+        
+        present(picker, animated: true)
+    }
+
     func configureTextField(_ textField: UITextField) {
         textField.delegate = textFieldDelegate
 
@@ -167,36 +202,33 @@ class EditMemeViewController: UIViewController, UIImagePickerControllerDelegate,
     }
 
     func subscribeToKeyboardWillShow() {
-        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow), name: UIResponder.keyboardWillShowNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow),
+                                               name: UIResponder.keyboardWillShowNotification,
+                                               object: nil)
     }
 
     func subscribeToKeyboardWillHide() {
-        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide), name: UIResponder.keyboardWillHideNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide),
+                                               name: UIResponder.keyboardWillHideNotification,
+                                               object: nil)
     }
     
     func unsubscribeFromKeyboardWillShow() {
-        NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillShowNotification, object: nil)
+        NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillShowNotification,
+                                                  object: nil)
     }
     
     func unsubscribeFromKeyboardWillHide() {
-        NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillHideNotification, object: nil)
+        NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillHideNotification,
+                                                  object: nil)
     }
 
     func getKeyboardHeight(_ notification: Notification) -> CGFloat {
-        let keyboardScreen = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as! NSValue
+        let keyboardScreen = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey]
+            as! NSValue
         return keyboardScreen.cgRectValue.height
     }
-    
-    func showImagePickerForCamera() {
-        let picker = UIImagePickerController()
-        
-        picker.delegate = self
-        picker.sourceType = .camera
-        picker.allowsEditing = true
-        
-        present(picker, animated: true)
-    }
-    
+
     func showAlert(title: String, message: String) {
         let ac = UIAlertController(title: title, message: message, preferredStyle: .alert)
         ac.addAction(UIAlertAction(title: Alerts.dismissActionTitle, style: .default))
@@ -204,7 +236,8 @@ class EditMemeViewController: UIViewController, UIImagePickerControllerDelegate,
     }
     
     func save() {
-        let meme = Meme(topText: topTextField.text!, bottomText: bottomTextField.text!, originalImage: imageView.image!, memedImage: memedImage)
+        let meme = Meme(topText: topTextField.text!, bottomText: bottomTextField.text!,
+                        originalImage: imageView.image!, memedImage: memedImage)
         let appDelegate = UIApplication.shared.delegate as! AppDelegate
         appDelegate.memes.append(meme)
     }
